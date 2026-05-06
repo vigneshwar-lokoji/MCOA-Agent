@@ -375,4 +375,4 @@ The Snap wrapper at `/usr/bin/chromium-browser` will fail with a `snap-confine` 
 
 ## License
 
-This project was developed as an academic data science capstone demonstration. All data used (Meridian Analytics Inc. financials) is entirely fictional and generated for evaluation purposes.
+This project was developed as an academic project. All data used (Meridian Analytics Inc. financials) is entirely fictional and generated for evaluation purposes.
