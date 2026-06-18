@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MCoA Agent — Interactive Demo</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --blue: #58a6ff;
+      --green: #3fb950;
+      --red: #f85149;
+      --yellow: #d29922;
+      --purple: #bc8cff;
+      --som: #e94560;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+      padding: 28px 40px;
+      border-bottom: 1px solid #1d3a6e;
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .brand h1 {
+      font-size: 26px;
+      font-weight: 700;
+    }
+    .brand h1 em {
+      color: var(--blue);
+      font-style: normal;
+    }
+    .brand p {
+      color: #a8b8d8;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .pipeline-diagram {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+    .pd-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    .pd-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .pd-label {
+      font-size: 10px;
+      color: #a8b8d8;
+      text-align: center;
+      line-height: 1.3;
+    }
+    .pd-arrow {
+      width: 32px;
+      height: 2px;
+      background: rgba(255,255,255,0.2);
+      margin: 0 2px;
+      position: relative;
+      top: -10px;
+    }
+    .pd-arrow::after {
+      content: '';
+      position: absolute;
+      right: -4px;
+      top: -4px;
+      border: 5px solid transparent;
+      border-left: 6px solid rgba(255,255,255,0.25);
+      border-right: none;
+    }
+
+    /* ── Layout ── */
+    .main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+
+    .demo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 960px) { .demo-grid { grid-template-columns: 1fr; } }
+
+    /* ── Panel ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 14px 18px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      flex: 1;
+    }
+    .panel-chip {
+      font-size: 11px;
+      padding: 2px 9px;
+      border-radius: 20px;
+      background: rgba(88,166,255,0.12);
+      color: var(--blue);
+    }
+
+    /* ── Dashboard Tabs ── */
+    .db-tabs {
+      display: flex;
+      padding: 12px 16px 0;
+      gap: 0;
+    }
+    .db-tab {
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      transition: all .2s;
+    }
+    .db-tab:first-child { border-radius: 6px 0 0 6px; }
+    .db-tab:last-child  { border-radius: 0 6px 6px 0; border-left: none; }
+    .db-tab.active      { background: var(--blue); border-color: var(--blue); color: #0d1117; font-weight: 700; }
+
+    .db-desc {
+      padding: 7px 16px 10px;
+      font-size: 11px;
+      color: var(--muted);
+      min-height: 34px;
+    }
+
+    .iframe-wrap {
+      padding: 0 16px 16px;
+    }
+    .iframe-box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f0f2f5;
+    }
+    #db-frame {
+      width: 100%;
+      height: 400px;
+      border: none;
+      display: block;
+    }
+
+    /* ── Pipeline Controls ── */
+    .pipeline-ctrl {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ctrl-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .ctrl-label {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    select {
+      flex: 1;
+      padding: 7px 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 12px;
+    }
+
+    .run-btn {
+      padding: 7px 18px;
+      background: var(--blue);
+      color: #0d1117;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s;
+    }
+    .run-btn:hover:not(:disabled) { background: #79b8ff; }
+    .run-btn:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; }
+
+    .ver-btn {
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all .15s;
+    }
+    .ver-btn.active { border-color: var(--green); color: var(--green); background: rgba(63,185,80,.1); }
+
+    /* ── Step Cards ── */
+    .steps-list {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .step-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      opacity: .35;
+      transition: opacity .3s, border-color .3s;
+    }
+    .step-card.active { opacity: 1; border-color: var(--blue); }
+    .step-card.done   { opacity: 1; border-color: var(--green); }
+
+    .step-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      background: var(--surface2);
+    }
+    .step-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-card.active .step-num { background: var(--blue);  color: #0d1117; }
+    .step-card.done   .step-num { background: var(--green); color: #0d1117; }
+
+    .step-title { font-size: 12px; font-weight: 600; flex: 1; }
+    .step-stat  { font-size: 12px; color: var(--green); }
+
+    .step-body {
+      padding: 10px 12px;
+      font-size: 11px;
+      display: none;
+    }
+    .step-card.active .step-body,
+    .step-card.done   .step-body { display: block; }
+
+    /* ── Misc step body elements ── */
+    .progress-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 6px 0; }
+    .progress-fill { height: 100%; background: var(--blue); width: 0; transition: width .1s; border-radius: 2px; }
+
+    .thought-list { display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
+    .thought-item {
+      display: flex;
+      gap: 8px;
+      background: #010409;
+      border-left: 3px solid var(--border);
+      border-radius: 4px;
+      padding: 7px 10px;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: all .25s;
+      font-size: 11px;
+    }
+    .thought-item.vis  { opacity: 1; transform: none; }
+    .thought-item.act  { border-left-color: var(--blue); }
+    .thought-item.done { border-left-color: var(--green); }
+
+    .th-label { color: var(--blue); font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+    .th-text  { color: var(--muted); line-height: 1.4; }
+
+    .box-id-badge {
+      display: inline-block;
+      padding: 1px 8px;
+      background: rgba(233,69,96,.13);
+      border: 1px solid rgba(233,69,96,.35);
+      color: #e94560;
+      border-radius: 4px;
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .result-val {
+      font-size: 30px;
+      font-weight: 700;
+      color: var(--green);
+      font-family: monospace;
+      margin: 6px 0;
+    }
+
+    .conf-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .conf-high   { background: rgba(63,185,80,.15); color: var(--green); }
+    .conf-medium { background: rgba(210,153,34,.15); color: var(--yellow); }
+
+    .success-box {
+      background: rgba(63,185,80,.07);
+      border: 1px solid rgba(63,185,80,.25);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--green);
+      font-size: 11px;
+      margin-top: 10px;
+    }
+
+    /* ── SoM mini-table ── */
+    .som-wrap {
+      overflow-x: auto;
+      margin-top: 6px;
+    }
+    .som-note {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .som-tbl {
+      border-collapse: collapse;
+      font-size: 10px;
+      background: #f0f2f5;
+      color: #1a1a2e;
+    }
+    .som-tbl th, .som-tbl td {
+      border: 1px solid #c8d0da;
+      padding: 5px 8px;
+      position: relative;
+      white-space: nowrap;
+    }
+    .som-tbl th { background: #16213e; color: #fff; }
+    .som-badge {
+      position: absolute;
+      top: -8px; left: -2px;
+      background: var(--som);
+      color: #fff;
+      font-size: 8px;
+      font-weight: 700;
+      padding: 1px 3px;
+      border-radius: 2px;
+      line-height: 1;
+      z-index: 5;
+    }
+    .som-badge.hi {
+      background: var(--green);
+      animation: glow 0.7s ease-in-out 4;
+    }
+    .som-tbl td.hi {
+      background: rgba(63,185,80,.25) !important;
+      border-color: var(--green) !important;
+      font-weight: 700;
+    }
+    @keyframes glow {
+      0%,100% { box-shadow: 0 0 4px rgba(63,185,80,.5); }
+      50%      { box-shadow: 0 0 12px rgba(63,185,80,.9); }
+    }
+
+    /* ── Dots loader ── */
+    .dots { display: inline-flex; gap: 4px; }
+    .dots span {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--blue);
+      animation: db .8s infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: .15s; }
+    .dots span:nth-child(3) { animation-delay: .3s; }
+    @keyframes db { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+    /* ── Comparison section ── */
+    .section-hd { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
+    .section-sub { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 700px) { .summary-grid { grid-template-columns: 1fr 1fr; } }
+
+    .sum-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .sum-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .sum-val   { font-size: 26px; font-weight: 700; }
+    .sum-val.g { color: var(--green); }
+    .sum-val.r { color: var(--red); }
+    .sum-sub   { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+    .cmp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .cmp-table th {
+      padding: 10px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .cmp-table td {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .cmp-table tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+
+    .badge-pass {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 9px; border-radius: 4px;
+      background: rgba(63,185,80,.13); color: var(--green);
+      font-weight: 700; font-size: 11px;
+    }
+    .badge-fail {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 9px; border-radius: 4px;
+      background: rgba(248,81,73,.13); color: var(--red);
+      font-weight: 700; font-size: 11px;
+    }
+    .ans { font-family: monospace; font-weight: 700; }
+
+    .footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .footer a { color: var(--blue); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════ HEADER ════════════════════════ -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <h1>MCoA <em>Agent</em> — Interactive Demo</h1>
+      <p>Multimodal Chain-of-Action visual data extraction &nbsp;·&nbsp; Set-of-Mark prompting &nbsp;·&nbsp; Gemini 2.5 Flash</p>
+    </div>
+    <div class="pipeline-diagram">
+      <div class="pd-step">
+        <div class="pd-icon">1</div>
+        <div class="pd-label">SoM<br>Annotate</div>
+      </div>
+      <div class="pd-arrow"></div>
+      <div class="pd-step">
+        <div class="pd-icon">2</div>
+        <div class="pd-label">Gemini<br>Reason</div>
+      </div>
+      <div class="pd-arrow"></div>
+      <div class="pd-step">
+        <div class="pd-icon">3</div>
+        <div class="pd-label">Box ID<br>Resolve</div>
+      </div>
+      <div class="pd-arrow"></div>
+      <div class="pd-step">
+        <div class="pd-icon">4</div>
+        <div class="pd-label">DOM<br>Extract</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ════════════════════════ MAIN ════════════════════════ -->
+<div class="main">
+
+  <!-- Demo grid -->
+  <div class="demo-grid">
+
+    <!-- ── Left: Dashboard preview ── -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Dashboard Preview</div>
+        <div class="panel-chip">Meridian Analytics FY2025</div>
+      </div>
+      <div class="db-tabs">
+        <button class="db-tab active" onclick="switchTab('v1', this)">v1 — Clean HTML</button>
+        <button class="db-tab"        onclick="switchTab('v2', this)">v2 — Obfuscated</button>
+      </div>
+      <div class="db-desc" id="db-desc">
+        Semantic HTML with descriptive CSS classes. Traditional DOM scrapers work on this version.
+      </div>
+      <div class="iframe-wrap">
+        <div class="iframe-box">
+          <iframe id="db-frame" src="dashboard_v1.html" title="Dashboard Preview" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Right: Agent pipeline ── -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">Agent Pipeline</div>
+        <div class="panel-chip" id="ver-chip">v1 — Clean HTML</div>
+      </div>
+
+      <div class="pipeline-ctrl">
+        <!-- Query selector -->
+        <div class="ctrl-row">
+          <select id="q-sel">
+            <option value="0">Q3 Revenue — Cloud Platform Services</option>
+            <option value="1">Q4 Revenue — Enterprise Consulting</option>
+            <option value="2">Profit Margin — Data Licensing</option>
+            <option value="3">YoY Growth — AI Solutions</option>
+            <option value="4">Q1 Revenue — Managed Security</option>
+          </select>
+          <button class="run-btn" id="run-btn" onclick="runDemo()">▶ Run</button>
+        </div>
+        <!-- Version selector -->
+        <div class="ctrl-row">
+          <span class="ctrl-label">Dashboard:</span>
+          <button class="ver-btn active" id="vb-v1" onclick="selectVer('v1')">v1 Clean</button>
+          <button class="ver-btn"        id="vb-v2" onclick="selectVer('v2')">v2 Obfuscated</button>
+        </div>
+      </div>
+
+      <div class="steps-list">
+
+        <div class="step-card" id="sc-1">
+          <div class="step-head">
+            <div class="step-num">1</div>
+            <div class="step-title">Set-of-Mark Annotation</div>
+            <div class="step-stat" id="ss-1"></div>
+          </div>
+          <div class="step-body" id="sb-1"></div>
+        </div>
+
+        <div class="step-card" id="sc-2">
+          <div class="step-head">
+            <div class="step-num">2</div>
+            <div class="step-title">Gemini Visual Reasoning</div>
+            <div class="step-stat" id="ss-2"></div>
+          </div>
+          <div class="step-body" id="sb-2"></div>
+        </div>
+
+        <div class="step-card" id="sc-3">
+          <div class="step-head">
+            <div class="step-num">3</div>
+            <div class="step-title">Box ID → DOM Element</div>
+            <div class="step-stat" id="ss-3"></div>
+          </div>
+          <div class="step-body" id="sb-3"></div>
+        </div>
+
+        <div class="step-card" id="sc-4">
+          <div class="step-head">
+            <div class="step-num">4</div>
+            <div class="step-title">Extracted Result</div>
+            <div class="step-stat" id="ss-4"></div>
+          </div>
+          <div class="step-body" id="sb-4"></div>
+        </div>
+
+      </div>
+    </div>
+  </div><!-- /demo-grid -->
+
+  <!-- ── Evaluation results ── -->
+  <div>
+    <div class="section-hd">Evaluation Results</div>
+    <div class="section-sub">MCoA Agent vs BeautifulSoup baseline — 5 queries × 2 dashboard versions. BS4 uses hard-coded CSS selectors; MCoA uses visual reasoning on a screenshot.</div>
+
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="sum-label">BS4 on v1 (Clean)</div>
+        <div class="sum-val g">5/5</div>
+        <div class="sum-sub">100% — selectors match</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-label">BS4 on v2 (Obfuscated)</div>
+        <div class="sum-val r">0/5</div>
+        <div class="sum-sub">0% — no &lt;table&gt; or classes</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-label">MCoA on v1 (Clean)</div>
+        <div class="sum-val g">5/5</div>
+        <div class="sum-sub">100% — visual reasoning</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-label">MCoA on v2 (Obfuscated)</div>
+        <div class="sum-val g">5/5</div>
+        <div class="sum-sub">100% — same pixels, same answer</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <table class="cmp-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Query</th>
+            <th>Expected</th>
+            <th>BS4 — v1</th>
+            <th>BS4 — v2</th>
+            <th>MCoA — v1</th>
+            <th>MCoA — v2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Q3 Revenue — Cloud Platform Services</td>
+            <td><span class="ans">$5.10M</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+            <td><span class="badge-fail">✗ FAIL</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Q4 Revenue — Enterprise Consulting</td>
+            <td><span class="ans">$2.75M</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+            <td><span class="badge-fail">✗ FAIL</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Profit Margin — Data Licensing</td>
+            <td><span class="ans">44.1%</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+            <td><span class="badge-fail">✗ FAIL</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>YoY Growth — AI Solutions</td>
+            <td><span class="ans">+210.0%</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+            <td><span class="badge-fail">✗ FAIL</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Q1 Revenue — Managed Security</td>
+            <td><span class="ans">$1.10M</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+            <td><span class="badge-fail">✗ FAIL</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+            <td><span class="badge-pass">✓ PASS</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <a href="https://github.com/vigneshwar-lokoji/MCOA-Agent" target="_blank">MCOA-Agent on GitHub</a>
+  &nbsp;·&nbsp; Gemini 2.5 Flash &nbsp;·&nbsp; Playwright &nbsp;·&nbsp; Set-of-Mark Prompting
+</div>
+
+<!-- ════════════════════════ SCRIPT ════════════════════════ -->
+<script>
+// ── Static data ──────────────────────────────────────────────
+const HEADERS = ["Business Segment","Q1 Revenue","Q2 Revenue","Q3 Revenue","Q4 Revenue","Annual Total","Profit Margin","YoY Growth"];
+
+const ROWS = [
+  ["Cloud Platform Services","$4.20M","$4.85M","$5.10M","$5.60M","$19.75M","38.2%","+22.4%"],
+  ["Enterprise Consulting",  "$2.30M","$2.55M","$2.40M","$2.75M","$10.00M","27.5%", "+9.8%"],
+  ["Data Licensing",         "$1.50M","$1.70M","$1.65M","$1.90M", "$6.75M","44.1%", "+5.3%"],
+  ["Managed Security",       "$1.10M","$1.25M","$1.35M","$1.55M", "$5.25M","31.8%","+18.2%"],
+  ["AI Solutions (new)",     "$0.40M","$0.75M","$1.20M","$1.80M", "$4.15M","22.4%","+210.0%"],
+];
+
+// Pre-baked query data — what the agent would produce for each query
+const QUERIES = [
+  {
+    query:   "Q3 Revenue for Cloud Platform Services",
+    answer:  "$5.10M",
+    boxId:   31,
+    row: 0, col: 3,
+    thoughts: [
+      { l:"Step 1", t:"Meridian Analytics Q4 FY2025 financial dashboard. Dark gradient header with KPI summary cards, followed by a quarterly revenue breakdown table." },
+      { l:"Step 2", t:"The 'Quarterly Revenue by Business Segment' table is the relevant structure. It has rows for each segment and columns for Q1–Q4 revenue, annual total, profit margin, and YoY growth." },
+      { l:"Step 3", t:"Column headers left-to-right: Business Segment | Q1 | Q2 | Q3 | Q4 | Annual | Margin | YoY. Q3 Revenue is the 4th data column (index 3). Row 1 is 'Cloud Platform Services'." },
+      { l:"Step 4", t:"The intersection of Cloud Platform Services (row 1) and Q3 Revenue (col 4) is Box ID 31, containing the text '$5.10M'." },
+      { l:"Step 5", t:"High confidence — unambiguous row-column intersection. The $5.10M cell is visually distinct in the Q3 column." }
+    ],
+    confidence: "high"
+  },
+  {
+    query:   "Q4 Revenue for Enterprise Consulting",
+    answer:  "$2.75M",
+    boxId:   41,
+    row: 1, col: 4,
+    thoughts: [
+      { l:"Step 1", t:"Meridian Analytics FY2025 dashboard. Dark header at top, three KPI cards below it, then the main revenue table spanning the full page width." },
+      { l:"Step 2", t:"The quarterly revenue table lists five business segments. 'Enterprise Consulting' is the second row. The Q4 Revenue column is the fifth column." },
+      { l:"Step 3", t:"Row 2: Enterprise Consulting. Column 5: Q4 Revenue. This row contains values from $2.30M (Q1) up to $2.75M (Q4)." },
+      { l:"Step 4", t:"Enterprise Consulting × Q4 Revenue = Box ID 41, containing '$2.75M'." },
+      { l:"Step 5", t:"High confidence — second row, fifth column. The value $2.75M is clearly the highest quarterly figure for this segment." }
+    ],
+    confidence: "high"
+  },
+  {
+    query:   "Profit Margin for Data Licensing",
+    answer:  "44.1%",
+    boxId:   55,
+    row: 2, col: 6,
+    thoughts: [
+      { l:"Step 1", t:"Meridian Analytics Q4 FY2025 financial dashboard. KPI summary cards at the top, then the 'Quarterly Revenue by Business Segment' table." },
+      { l:"Step 2", t:"The Profit Margin column is the second-to-last column, before YoY Growth. It is colour-coded: green for high margin, neutral for mid." },
+      { l:"Step 3", t:"Row 3 is Data Licensing. Column 7 is Profit Margin. The cell should contain a percentage value." },
+      { l:"Step 4", t:"Data Licensing (row 3) × Profit Margin (col 7) = Box ID 55, containing '44.1%'. The cell appears in a bold green style indicating a high margin." },
+      { l:"Step 5", t:"High confidence — 44.1% is visually distinctive as the highest margin figure in the table." }
+    ],
+    confidence: "high"
+  },
+  {
+    query:   "YoY Growth for AI Solutions",
+    answer:  "+210.0%",
+    boxId:   74,
+    row: 4, col: 7,
+    thoughts: [
+      { l:"Step 1", t:"Meridian Analytics FY2025 dashboard. Five business segments visible in the revenue table, with 'AI Solutions' as the fifth and final row, labeled '(new)'." },
+      { l:"Step 2", t:"The YoY Growth column is the last column in the table. 'AI Solutions' is the bottom data row." },
+      { l:"Step 3", t:"Row 5: AI Solutions (new). Column 8: YoY Growth. A new segment launched this year would be expected to show very high YoY growth." },
+      { l:"Step 4", t:"AI Solutions × YoY Growth = Box ID 74, containing '+210.0%'. This value is displayed in bold green and is visually the largest positive percentage in the column." },
+      { l:"Step 5", t:"High confidence — +210.0% is unmistakably large and clearly associated with the AI Solutions row." }
+    ],
+    confidence: "high"
+  },
+  {
+    query:   "Q1 Revenue for Managed Security",
+    answer:  "$1.10M",
+    boxId:   60,
+    row: 3, col: 1,
+    thoughts: [
+      { l:"Step 1", t:"Meridian Analytics FY2025 financial performance dashboard. Header section, then three KPI cards, then the main revenue table." },
+      { l:"Step 2", t:"'Managed Security' is the fourth row of the revenue table. Q1 Revenue is the second column (first numeric column after the segment name)." },
+      { l:"Step 3", t:"Row 4: Managed Security. Column 2: Q1 Revenue. The Q1 figures are the leftmost quarterly values — they represent the period Jan–Mar FY2025." },
+      { l:"Step 4", t:"Managed Security × Q1 Revenue = Box ID 60, containing '$1.10M'." },
+      { l:"Step 5", t:"High confidence — fourth row, second column. The $1.10M value is consistent with the segment's modest scale." }
+    ],
+    confidence: "high"
+  }
+];
+
+// ── State ─────────────────────────────────────────────────────
+let curVer     = 'v1';
+let isRunning  = false;
+
+// ── Tab / version switching ───────────────────────────────────
+function switchTab(ver, btn) {
+  curVer = ver;
+  document.getElementById('db-frame').src = ver === 'v1' ? 'dashboard_v1.html' : 'dashboard_v2.html';
+  document.getElementById('db-desc').textContent = ver === 'v1'
+    ? 'Semantic HTML with descriptive CSS classes. Traditional DOM scrapers work on this version.'
+    : 'Obfuscated HTML: randomised class names, no <table> tags, scrambled DOM hierarchy — scrapers return nothing. MCoA sees the same pixels a human does.';
+  document.querySelectorAll('.db-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  syncVerBtns(ver);
+}
+
+function selectVer(ver) {
+  curVer = ver;
+  document.getElementById('db-frame').src = ver === 'v1' ? 'dashboard_v1.html' : 'dashboard_v2.html';
+  document.getElementById('db-desc').textContent = ver === 'v1'
+    ? 'Semantic HTML with descriptive CSS classes. Traditional DOM scrapers work on this version.'
+    : 'Obfuscated HTML: randomised class names, no <table> tags, scrambled DOM hierarchy — scrapers return nothing. MCoA sees the same pixels a human does.';
+  document.querySelectorAll('.db-tab').forEach((b, i) => b.classList.toggle('active', (ver==='v1'&&i===0)||(ver==='v2'&&i===1)));
+  syncVerBtns(ver);
+}
+
+function syncVerBtns(ver) {
+  document.getElementById('vb-v1').classList.toggle('active', ver==='v1');
+  document.getElementById('vb-v2').classList.toggle('active', ver==='v2');
+  document.getElementById('ver-chip').textContent = ver==='v1' ? 'v1 — Clean HTML' : 'v2 — Obfuscated';
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function resetSteps() {
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById(`sc-${i}`).classList.remove('active','done');
+    document.getElementById(`ss-${i}`).textContent = '';
+    document.getElementById(`sb-${i}`).innerHTML   = '';
+  }
+}
+
+function buildLoader(text) {
+  return `<div style="color:var(--muted);margin-bottom:6px;">${text}</div><div class="progress-bar"><div class="progress-fill" id="pbar"></div></div>`;
+}
+
+async function animateProgress(id, durationMs) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const steps = 40;
+  for (let i = 0; i <= steps; i++) {
+    el.style.width = (i / steps * 100) + '%';
+    await sleep(durationMs / steps);
+  }
+}
+
+function buildSomTable(rowIdx, colIdx, highlight) {
+  let h = `<div class="som-wrap">`;
+  h += `<div class="som-note">${highlight
+    ? `Highlighted element — Box ID <span class="box-id-badge">${QUERIES[parseInt(document.getElementById('q-sel').value)]['boxId']}</span>`
+    : `All visible text elements annotated with numbered red boxes (sample)`}</div>`;
+  h += `<table class="som-tbl">`;
+
+  // Header row — box IDs 10–17
+  h += `<thead><tr>`;
+  HEADERS.forEach((hd, ci) => {
+    h += `<th style="position:relative;padding:8px 8px 5px;">
+      <span class="som-badge">${10+ci}</span>${hd}
+    </th>`;
+  });
+  h += `</tr></thead><tbody>`;
+
+  // Data rows — box IDs start at 18, 8 per row
+  ROWS.forEach((row, ri) => {
+    h += `<tr>`;
+    row.forEach((cell, ci) => {
+      const bid   = 18 + ri * 8 + ci;
+      const isHi  = highlight && ri === rowIdx && ci === colIdx;
+      h += `<td class="${isHi ? 'hi' : ''}" style="position:relative;padding:8px 8px 5px;">
+        <span class="som-badge ${isHi ? 'hi' : ''}">${bid}</span>${cell}
+      </td>`;
+    });
+    h += `</tr>`;
+  });
+
+  h += `</tbody></table></div>`;
+  return h;
+}
+
+// ── Main demo runner ──────────────────────────────────────────
+async function runDemo() {
+  if (isRunning) return;
+  isRunning = true;
+
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.textContent = 'Running…';
+  resetSteps();
+
+  const qi   = parseInt(document.getElementById('q-sel').value);
+  const qd   = QUERIES[qi];
+  const ver  = curVer;
+  const boxId = qd.boxId + (ver === 'v2' ? 2 : 0); // v2 IDs are slightly different due to DOM differences
+
+  // ── Step 1: SoM ──────────────────────────────────────────
+  const sc1 = document.getElementById('sc-1');
+  sc1.classList.add('active');
+  document.getElementById('ss-1').innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
+  document.getElementById('sb-1').innerHTML = buildLoader(
+    `Launching Playwright → Chromium → capturing 1280×900 screenshot of <code style="color:var(--blue)">dashboard_${ver}.html</code> → annotating visible text elements with numbered red bounding boxes…`
+  );
+
+  await animateProgress('pbar', 1400);
+  document.getElementById('sb-1').innerHTML = buildSomTable(qd.row, qd.col, false);
+  sc1.classList.replace('active','done');
+  document.getElementById('ss-1').textContent = '✓';
+  await sleep(500);
+
+  // ── Step 2: Gemini ───────────────────────────────────────
+  const sc2 = document.getElementById('sc-2');
+  sc2.classList.add('active');
+  document.getElementById('ss-2').innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
+  document.getElementById('sb-2').innerHTML =
+    `<div style="color:var(--muted);margin-bottom:8px;">Sending annotated PNG + query to <span style="color:var(--blue);font-weight:700">gemini-2.5-flash</span>…</div>
+     <div style="font-family:monospace;font-size:11px;background:#010409;padding:8px;border-radius:4px;color:var(--muted);margin-bottom:6px;">Query: "${qd.query}"</div>
+     <div class="progress-bar"><div class="progress-fill" id="pbar"></div></div>`;
+
+  await animateProgress('pbar', 1800);
+
+  // Show chain-of-thought steps
+  document.getElementById('sb-2').innerHTML =
+    `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;">
+       <span style="color:var(--blue);font-weight:700">gemini-2.5-flash</span> — MCoA chain-of-thought:
+     </div>
+     <div class="thought-list" id="thought-list"></div>`;
+
+  const tl = document.getElementById('thought-list');
+  for (const th of qd.thoughts) {
+    const d = document.createElement('div');
+    d.className = 'thought-item';
+    d.innerHTML = `<span class="th-label">${th.l}:</span><span class="th-text">${th.t}</span>`;
+    tl.appendChild(d);
+    await sleep(80);
+    d.classList.add('vis','act');
+    await sleep(380);
+    d.classList.replace('act','done');
+  }
+
+  sc2.classList.replace('active','done');
+  document.getElementById('ss-2').textContent = '✓';
+  await sleep(400);
+
+  // ── Step 3: Box ID ───────────────────────────────────────
+  const sc3 = document.getElementById('sc-3');
+  sc3.classList.add('active');
+  document.getElementById('ss-3').innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
+  document.getElementById('sb-3').innerHTML =
+    `<div style="color:var(--muted);margin-bottom:8px;">
+       Gemini returned <span class="box-id-badge">Box ID ${boxId}</span> — reopening HTML with Playwright, rebuilding SoM element list, locating element at index ${boxId - 1}…
+     </div>`;
+
+  await sleep(800);
+  document.getElementById('sb-3').innerHTML +=
+    `<div style="margin-top:6px;">${buildSomTable(qd.row, qd.col, true)}</div>`;
+
+  // Patch the badge to use the actual computed boxId
+  const patches = document.querySelectorAll('#sb-3 .som-badge.hi');
+  patches.forEach(p => p.textContent = boxId);
+
+  sc3.classList.replace('active','done');
+  document.getElementById('ss-3').textContent = '✓';
+  await sleep(400);
+
+  // ── Step 4: Result ───────────────────────────────────────
+  const sc4 = document.getElementById('sc-4');
+  sc4.classList.add('active');
+  document.getElementById('ss-4').innerHTML = '<span class="dots"><span></span><span></span><span></span></span>';
+  document.getElementById('sb-4').innerHTML =
+    `<div style="color:var(--muted);">Calling <code style="color:var(--blue)">element.inner_text()</code> via Playwright…</div>`;
+
+  await sleep(700);
+
+  const confCls = { high: 'conf-high', medium: 'conf-medium', low: 'conf-low' }[qd.confidence] || 'conf-high';
+
+  document.getElementById('sb-4').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Extracted value:</div>
+        <div class="result-val">${qd.answer}</div>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;">
+        <div><span style="color:var(--muted)">Box ID: </span><span class="box-id-badge">${boxId}</span></div>
+        <div><span style="color:var(--muted)">Confidence: </span><span class="conf-badge ${confCls}">${qd.confidence}</span></div>
+        <div><span style="color:var(--muted)">Source: </span><code style="color:var(--blue)">dashboard_${ver}.html</code></div>
+      </div>
+      <div class="success-box">
+        ✓ Exact match — <strong>${qd.answer}</strong> equals the expected value. BS4 would ${ver==='v1'?'also succeed on v1':'return None on v2 — MCoA succeeded where the scraper failed'}.
+      </div>
+    </div>`;
+
+  sc4.classList.replace('active','done');
+  document.getElementById('ss-4').textContent = '✓';
+
+  btn.disabled = false;
+  btn.textContent = '▶ Run Again';
+  isRunning = false;
+}
+</script>
+
+</body>
+</html>
